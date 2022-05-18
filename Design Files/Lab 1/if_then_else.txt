@@ -1,0 +1,21 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity if_then_else is
+port(
+ X: in std_logic_vector (1 downto 0);
+ Y: in std_logic_vector (1 downto 0);
+ Z: out std_logic 
+);
+end if_then_else;
+architecture behavioral of if_then_else is
+begin
+    P1: process(X,Y)
+    begin
+        if (X = Y) then
+            Z <= '1';
+        else
+            Z <= '0';
+        end if;
+    end process;
+end behavioral;

@@ -1,0 +1,352 @@
+-- Vending Machine Subsystem By Dov Cattan
+
+-- Vending Machine Controller
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+
+entity vending_machine_controller is
+    port(
+
+    -- inputs
+    
+        clk : in std_logic;
+        rst : in std_logic;
+        lock : in std_logic;
+        soda_reserved : in std_logic;
+        soda_price : in std_logic_vector(11 downto 0);
+        soda_req : in std_logic;
+        deposit_amt : in std_logic_vector(11 downto 0);
+        coin_push : in std_logic;
+        coin_amt : in std_logic_vector(11 downto 0);
+
+     -- outputs 
+     
+        soda_drop : out std_logic;
+        deposit_incr : out std_logic;
+        deposit_decr : out std_logic;
+        coin_reject : out std_logic;
+        error_amt : out std_logic;
+        error_reserved : out std_logic
+    );
+end vending_machine_controller;
+
+architecture structural of vending_machine_controller is
+
+    type vending_state is (
+        IDLE, COIN_CHECK, COIN_ACCEPT, COIN_DECLINE,
+        SODA_CHECK, SODA_DECLINED_RESERVED,SODA_ACCEPT, SODA_ACCEPT_WAIT, SODA_DECLINE_AMT
+        );
+    signal state : vending_state;
+begin
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            if rst = '0' then
+                state <= IDLE;
+            else
+                case state is
+                    when IDLE =>
+                        if coin_push = '1' then
+                            state <= COIN_CHECK;
+                        elsif(soda_req = '1') then
+                            state <= SODA_CHECK;
+                        end if;
+                    when COIN_CHECK =>
+                        if(coin_amt + deposit_amt <= "001111101000") then
+                            state <= COIN_ACCEPT;
+                        else
+                            state <= COIN_DECLINE;
+                        end if;
+                    when COIN_ACCEPT =>
+                        state <= IDLE;
+                    when COIN_DECLINE =>
+                        if(lock = '0') then
+                            state <= IDLE;
+                        end if;
+                    when SODA_CHECK =>
+                        if(soda_reserved ='1') then
+                            state <= SODA_DECLINED_RESERVED;
+                        elsif(soda_reserved = '0' and deposit_amt >= soda_price) then
+                            state <= SODA_ACCEPT;
+                        else
+                            state <= SODA_DECLINE_AMT;
+                        end if;
+                    when SODA_ACCEPT =>
+                        state <= SODA_ACCEPT_WAIT;
+                    when SODA_ACCEPT_WAIT =>
+                        if(lock = '0') then
+                            state <= IDLE;
+                        end if;
+                    when SODA_DECLINE_AMT =>
+                        if(lock = '0') then
+                            state <= IDLE;
+                        end if;
+                    when SODA_DECLINED_RESERVED =>
+                        if(lock = '0') then
+                            state <= IDLE;
+                        end if;
+                end case;
+            end if;
+        end if;
+
+    end process;
+    
+
+deposit_incr <= '1' when (state = COIN_ACCEPT) else '0';
+coin_reject <= '1' when (state = COIN_DECLINE) else '0'; 
+soda_drop <= '1' when (state = SODA_ACCEPT_WAIT) else '0';     
+deposit_decr <= '1' when (state = SODA_ACCEPT) else '0';
+error_amt <= '1' when (state = SODA_DECLINE_AMT) else '0';
+error_reserved <= '1' when (state = SODA_DECLINED_RESERVED) else '0';
+
+end structural;
+
+-- Soda List
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+
+ENTITY soda_list is
+    port(
+        soda_reserved : out std_logic;
+        soda_sel :in std_logic_vector(3 downto 0);
+        soda_price : out std_logic_vector(11 downto 0)
+    );
+end soda_list;
+
+architecture behavior of soda_list is
+begin
+    with soda_sel select
+         soda_price <= 
+        "000000110111" when "0000",
+        "000001010101" when "0001",
+        "000001011111" when "0010",
+        "000001111101" when "0011",
+        "000010000111" when "0100",
+        "000010010110" when "0101",
+        "000011100001" when "0110",
+        "000011111010" when "0111",
+        "000100101100" when "1000",
+        "000000000000" when others;
+
+        with soda_sel select 
+        soda_reserved <=
+         '1' when "1001",
+         '1' when "1010",
+         '1' when "1011",
+         '1' when "1100",
+         '1' when "1101",
+         '1' when "1110",
+         '1' when "1111",
+         '0' when others;
+end behavior;
+
+-- Coin List
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+
+entity coin_list is
+    port(
+        coin_sel :in std_logic_vector(1 DOWNTO 0);
+        coin_amt : out std_logic_vector(11 downto 0)
+    );
+end coin_list;
+
+architecture behavior of coin_list is
+begin
+    with coin_sel select
+ coin_amt <= 
+        "000000000001" when "00",
+        "000000000101" when "01",
+        "000000001010" when "10",
+        "000000011001" when "11",
+        "000000000000" when others;
+end behavior;
+
+-- Deposit Register
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+
+entity deposit_register is
+    port(
+
+    -- inputs
+        clk : in std_logic;
+        rst : in std_logic;
+        deposit_incr : in std_logic;
+        deposit_incr_amt : in std_logic_vector(11 downto 0);
+        deposit_decr : in std_logic;
+        deposit_decr_amt : in std_logic_vector(11 downto 0);
+    --outputs    
+        deposit_amt: out std_logic_vector(11 downto 0)
+    );
+end deposit_register;
+
+architecture behavior of deposit_register is
+    signal deposit_amt_r : std_logic_vector(11 downto 0);
+begin
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            if rst = '0' then
+                deposit_amt_r <= "000000000000";
+            else
+                if deposit_incr = '1' then
+                    deposit_amt_r <= deposit_amt_r + deposit_incr_amt;
+                 else if deposit_decr = '1' then
+                        deposit_amt_r <= deposit_amt_r - deposit_decr_amt;
+                    end if;
+                    end if;
+            end if;
+        end if;
+    end process;
+    deposit_amt <= deposit_amt_r;
+end behavior;
+
+-- Vending Machine Subsystem
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity vending_machine_subsystem is
+    port(
+
+    -- inputs
+
+        clk : in std_logic;
+        rst : in std_logic;
+        soda_sel : in std_logic_vector(3 downto 0);
+        soda_req : in std_logic;
+        lock : in std_logic;
+        coin_push : in std_logic;
+        coin_sel : in std_logic_vector(1 downto 0);
+
+    -- outputs
+
+        soda_reserved : out std_logic;
+        soda_price : out std_logic_vector(11 downto 0);
+        soda_drop : out std_logic;
+        error_amt : out std_logic;
+        error_reserved : out std_logic;
+        coin_reject : out std_logic;
+        deposit_amt : out std_logic_vector(11 downto 0)
+    );
+end vending_machine_subsystem;
+
+architecture structural of vending_machine_subsystem is
+   
+    signal coin_amt, soda_price_s, deposit_amt_s : std_logic_vector(11 downto 0);
+    signal deposit_incr, deposit_incr_s, deposit_decr_s, soda_reserved_s : std_logic;
+     
+
+   component vending_machine_controller is
+    port(
+
+        --inputs
+        
+        clk : in std_logic;
+        rst : in std_logic;
+        lock : in std_logic;
+        soda_reserved : in std_logic;
+        soda_price : in std_logic_vector(11 downto 0);
+        soda_req : in std_logic;
+        deposit_amt : in std_logic_vector(11 downto 0);
+        coin_push : in std_logic;
+        coin_amt : in std_logic_vector(11 downto 0);
+
+        --outputs
+
+        soda_drop : out std_logic;
+        deposit_incr : out std_logic;
+        deposit_decr : out std_logic;
+        coin_reject : out std_logic;
+        error_amt : out std_logic;
+        error_reserved : out std_logic
+        );
+    end component;
+
+     
+    component deposit_register is
+        port(
+
+        -- inputs
+            clk : in std_logic;
+            rst : in std_logic;
+            deposit_incr : in std_logic;
+            deposit_decr : in std_logic;
+            deposit_incr_amt : in std_logic_vector(11 downto 0);
+            deposit_decr_amt : in std_logic_vector(11 downto 0);
+       -- outputs
+            deposit_amt: out std_logic_vector(11 downto 0));
+        end component;
+
+   component soda_list is
+        port(soda_sel : in std_logic_vector(3 downto 0);
+             soda_reserved : out std_logic;
+             soda_price : out std_logic_vector(11 downto 0));
+    end component;
+    
+    component coin_list is
+        port(coin_sel : in std_logic_vector(1 downto 0);
+             coin_amt : out std_logic_vector(11 downto 0));
+    end component;
+
+begin
+
+ -- Instantiate The Vending Machine Subsystem Components
+    inst_vending_machine_controller: vending_machine_controller port map(
+        rst => rst,
+        clk => clk,
+        soda_req => soda_req,
+        coin_push => coin_push,
+        lock => lock,
+        soda_price => soda_price_s,
+        deposit_amt => deposit_amt_s,
+        coin_amt => coin_amt,
+        soda_drop => soda_drop,
+        deposit_incr => deposit_incr_s,
+        deposit_decr => deposit_decr_s,
+        coin_reject => coin_reject,
+        error_amt => error_amt,
+        error_reserved => error_reserved,
+        soda_reserved => soda_reserved_s
+
+    );   
+
+    inst_deposit_register : deposit_register port map(
+            rst => rst,
+            clk => clk,
+            deposit_incr => deposit_incr_s,
+            deposit_decr => deposit_decr_s,
+            deposit_incr_amt => coin_amt,
+            deposit_decr_amt => soda_price_s,
+            deposit_amt => deposit_amt_s
+        );
+
+    inst_soda_list : soda_list port map(
+            soda_sel => soda_sel,
+            soda_reserved => soda_reserved_s,
+            soda_price => soda_price_s
+        );
+
+    inst_coin_list : coin_list port map(
+            coin_sel => coin_sel,
+            coin_amt => coin_amt
+        );
+    
+
+        
+ deposit_amt <= deposit_amt_s; 
+ soda_price <= soda_price_s;
+ soda_reserved <= soda_reserved_s;
+end structural;

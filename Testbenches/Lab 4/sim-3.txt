@@ -1,0 +1,90 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.std_logic_arith.all;
+use IEEE.std_logic_textio.all;
+
+library std;
+use std.textio.all;
+
+entity full_adder_tb is
+end full_adder_tb;
+
+architecture Behavioral of full_adder_tb is
+ constant wait_time : time := 100 ns;
+constant n : integer := 8;
+ component mult is
+  
+           
+    port (
+           a : in std_logic_vector(n-1 downto 0);
+           b : in std_logic_vector(n-1 downto 0);
+           clk : in std_logic; 
+           p : out std_logic_vector(2*n-1 downto 0)
+     
+         );
+     end component;
+ signal a: std_logic_vector(n-1 downto 0);
+ signal b: std_logic_vector(n-1 downto 0);
+ signal clk: std_logic;
+ signal p: std_logic_vector(2*n-1 downto 0);
+
+
+ file adder_file : text open READ_MODE is  "mult8x8.dat";
+
+     
+begin
+
+        u_adder: mult
+        port map(
+          a => a,
+          b => b,
+          clk => clk,
+          p => p
+        );
+
+        clock_gen : process
+    begin
+        clk <= '0';
+        wait for 10 ns; 
+        clk <=  '1';
+        wait for 20 ns; 
+    end process;
+
+        tb: process 
+        variable v_line : line;
+        variable v_space : character;
+        variable va: std_logic_vector(n-1 downto 0);
+        variable vb: std_logic_vector(n-1 downto 0);
+        variable vp: std_logic_vector(2*n-1 downto 0);
+        variable cur_line : integer :=1;
+
+        begin
+
+            while not endfile(adder_file) loop
+                readline(adder_file, v_line);
+                hread(v_line, va);
+                read(v_line, v_space);
+                hread(v_line, vb);
+                read(v_line, v_space);
+                hread(v_line, vp);
+
+                a<=va;
+                b<=vb;
+               
+            
+ 
+             
+                wait for wait_time;
+               assert p = vp
+                    report "Actual value does not match expected value at line " & integer'image(cur_line)
+                       severity failure;
+                cur_line := cur_line + 1;
+            end loop; 
+
+            report "Simulation complete";
+            wait;
+        end process;
+    
+
+
+end Behavioral;

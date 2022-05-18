@@ -1,0 +1,32 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+library unisim;
+use UNISIM.vcomponents.all;
+    
+entity LUT_primitive is
+    port(
+         X: in std_logic_vector (1 downto 0);
+         Y: in std_logic_vector (1 downto 0);
+         Z: out std_logic
+    );
+end LUT_primitive;
+
+architecture primitive of LUT_primitive is
+
+begin
+    LUT4_inst : LUT4
+    generic map(
+    INIT => X"8421")
+    port map (
+        O => Z, -- LUT General Output
+        I0 => X(0), --LUT input
+        I1 => X(1), --LUT input
+        I2 => Y(0), --LUT input
+        I3 => Y(1) --LUT input
+    );
+    
+    
+    
+end primitive;
+
+

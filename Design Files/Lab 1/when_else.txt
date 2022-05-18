@@ -1,0 +1,13 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+entity when_else is
+port(
+ X: in std_logic_vector (1 downto 0);
+ Y: in std_logic_vector (1 downto 0);
+ Z: out std_logic
+);
+end when_else;
+architecture dataflow of when_else is
+begin
+Z <= '1' when (X = Y) else '0';
+end dataflow;

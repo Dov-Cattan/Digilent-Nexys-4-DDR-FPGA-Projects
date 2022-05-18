@@ -1,0 +1,275 @@
+-- adder module
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.std_logic_signed.all;
+
+
+entity adder is
+    port ( 
+        sel: in std_logic_vector(1 downto 0);
+        a: in std_logic_vector(5 downto 0);
+        b: in std_logic_vector(5 downto 0);
+        r_adder: out std_logic_vector(5 downto 0)
+    );
+end adder;
+
+architecture Behavioral of adder is
+
+    signal sum : std_logic_vector(6 downto 0);
+    signal diff :std_logic_vector(6 downto 0);
+   
+
+begin
+
+    process(sel,a,b,sum,diff)
+    begin
+        if (sel = "00") then
+            sum <= ('0' & a) + ('0' & b);
+            r_adder <= sum(5 DOWNTO 0);
+        end if;
+        if (sel = "01") then
+            sum <= ('0' & a) + ('0' & b);
+            r_adder <= "00000" & sum(6);
+        end if;
+        if (sel = "10") then
+            diff<= ('0' & a) - ('0' & b);
+            r_adder <= diff(5 DOWNTO 0);
+        end if;
+        if (sel = "11") then
+            diff <= ('0' & a) - ('0' & b);
+            r_adder <= "00000" & diff(6);
+        end if;
+    end process;
+
+end Behavioral;
+
+-- multiplier module
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.std_logic_unsigned.all;
+
+
+
+entity mult is
+    port ( 
+        sel: in std_logic;
+        a: in std_logic_vector(5 downto 0);
+        b: in std_logic_vector(5 downto 0);
+        r_mult: out std_logic_vector(5 downto 0)
+    );
+end mult;
+
+architecture Behavioral of mult is
+  
+        signal prod : std_logic_vector(11 downto 0);
+
+begin
+    
+    process (sel,a,b,prod)
+    
+    begin 
+    prod <= a*b;
+    if (sel = '0') then r_mult <= prod (5 downto 0);
+   
+    elsif (sel  = '1') then r_mult <= prod (11 downto 6);
+    end if;
+    end process;
+
+end Behavioral;
+
+-- logic unit
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.std_logic_signed.all;
+
+entity logic is
+
+        port ( 
+            sel: in std_logic_vector(1 downto 0);
+            a: in std_logic_vector(5 downto 0);
+            b: in std_logic_vector(5 downto 0);
+            r_logic: out std_logic_vector(5 downto 0)
+        );
+   
+end logic;
+
+architecture Behavioral of logic is
+
+begin 
+
+    process (sel,a,b)
+    begin 
+    
+    if sel = "00" then r_logic <= NOT a;
+    elsif sel = "01" then r_logic <= a AND b;
+    elsif sel = "10" then r_logic <= a OR b;
+    elsif sel = "11" then r_logic <= a XOR b;
+    end if;
+    end process;
+end Behavioral;
+
+-- shifter unit
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use ieee.numeric_std.all;
+
+
+entity shifter is
+port (
+    sel: in std_logic_vector(1 downto 0);
+    a: in std_logic_vector(5 downto 0);
+    b: in std_logic_vector(2 downto 0);
+    r_shifter: out std_logic_vector(5 downto 0)
+ );
+end shifter;
+
+architecture Behavioral of shifter is
+begin
+
+
+    process(sel,a,b)
+    begin 
+    if sel = "00" OR sel = "01" then r_shifter <= std_logic_vector(shift_left(unsigned(a),to_integer(unsigned(b))));
+    elsif sel = "10" then r_shifter <= std_logic_vector(shift_right(unsigned(a),to_integer(unsigned(b))));
+    elsif  sel = "11" then r_shifter <= std_logic_vector(shift_right(signed(a),to_integer(unsigned(b))));
+    end if;
+    end process;
+end Behavioral;
+
+-- mux unit
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+
+entity mux is 
+port(
+    sel: IN std_logic_vector(1 DOWNTO 0); 
+    r_adder, r_mult, r_logic, r_shifter: in std_logic_vector(5 downto 0);
+   r_mux: out std_logic_vector(5 downto 0)
+) ;
+end mux; 
+
+architecture Behavior of mux is 
+
+   begin
+
+       with sel select 
+            r_mux <=
+            r_adder when "00",
+            r_mult when "01",
+            r_logic when "10",
+            r_shifter when "11",
+            "000000" when others;
+    
+end behavior;
+
+-- alu module
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+
+
+entity alu is
+port(
+        sel: in std_logic_vector(3 downto 0);
+                    a: in std_logic_vector(5 downto 0);
+                    b: in std_logic_vector(5 downto 0);
+                    r_alu: out std_logic_vector(5 downto 0)
+);
+end alu;
+
+architecture Structural of alu is
+    signal r_adder, r_mult, r_logic, r_shifter : std_logic_vector(5 downto 0);
+    -- adder unit
+   component adder is
+                port ( 
+                    sel: in std_logic_vector(1 downto 0);
+                    a: in std_logic_vector(5 downto 0);
+                    b: in std_logic_vector(5 downto 0);
+                    r_adder: out std_logic_vector(5 downto 0)
+                );
+            end component;
+-- multiplier unit
+      component mult is
+    port ( 
+        sel: in std_logic;
+        a: in std_logic_vector(5 downto 0);
+        b: in std_logic_vector(5 downto 0);
+        r_mult: out std_logic_vector(5 downto 0)
+    );
+end component;
+---logic unit
+component logic is
+
+        port ( 
+            sel: in std_logic_vector(1 downto 0);
+            a: in std_logic_vector(5 downto 0);
+            b: in std_logic_vector(5 downto 0);
+            r_logic: out std_logic_vector(5 downto 0)
+        );
+   
+end component;
+--shifter unit
+component shifter is
+        port (
+            sel: in std_logic_vector(1 downto 0);
+            a: in std_logic_vector(5 downto 0);
+            b: in std_logic_vector(2 downto 0);
+            r_shifter: out std_logic_vector(5 downto 0)
+         );
+        end component;
+
+-- Call Multiplexer Here
+component mux is 
+port(
+    sel :IN std_logic_vector(1 DOWNTO 0); 
+    r_adder, r_mult, r_logic, r_shifter: in std_logic_vector(5 downto 0);
+   r_mux: out std_logic_vector(5 downto 0)
+);
+end component;
+begin
+    
+	-- instantiate components
+    instantiate_adder : adder port map(
+            sel => sel(1 downto 0),
+            a => a,
+            b => b,
+            r_adder => r_adder
+        );
+    instantiate_mult : mult port map(
+            sel => sel(0),
+            a => a,
+            b => b,
+            r_mult => r_mult
+        );
+    instantiate_logic : logic port map(
+            sel => sel(1 downto 0),
+            a => a,
+            b => b,
+            r_logic => r_logic
+        );
+    instantiate_shifter : shifter port map(
+            sel => sel(1 downto 0),
+            a => a,
+            b => b(2 downto 0),
+            r_shifter => r_shifter
+        );
+    instantiate_mux : mux port map(
+            sel => sel(3 downto 2),
+            r_adder => r_adder,
+            r_mult => r_mult,
+            r_logic => r_logic,
+            r_shifter => r_shifter,
+            r_mux => r_alu
+        );
+
+end Structural;
+
+
+
+
+

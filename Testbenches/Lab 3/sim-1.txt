@@ -1,0 +1,200 @@
+-- Testbench for ALU
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+
+
+entity alu_testbench is
+end alu_testbench;
+
+architecture Behavioral of alu_testbench is
+   component alu is
+      port(
+              sel: in std_logic_vector(3 downto 0);
+               a: in std_logic_vector(5 downto 0);
+               b: in std_logic_vector(5 downto 0);
+               r_alu: out std_logic_vector(5 downto 0)
+      );
+   end component;
+
+signal sel: std_logic_vector(3 downto 0);
+signal a: std_logic_vector(5 downto 0);
+signal b: std_logic_vector(5 downto 0);
+signal r_alu: std_logic_vector(5 downto 0);
+
+-- Period Variable
+constant PERIOD : time := 10 ns;
+begin
+
+   Unit_Under_Test: alu
+   port map (
+      sel => sel,
+      a => a,
+      b => b,
+      r_alu => r_alu
+   );
+
+testbench: process 
+begin
+   
+-- Case 1: a = 4 = 000100 and b = 2 = 000010
+  a <= "000100";
+  b <= "000010";
+  
+   -- Selects 0 
+  sel <= "0000" ;
+  wait for PERIOD;
+   -- Selects 1
+  sel <= "0001" ;
+  wait for PERIOD;
+   -- Selects 2
+  sel <= "0010" ;
+  wait for PERIOD;
+   -- Selects 3
+  sel <= "0011" ;
+  wait for PERIOD;
+   -- Selects 4
+  sel <= "0100" ;
+  wait for PERIOD;
+   -- Selects 5            
+  sel <= "0101" ;
+  wait for PERIOD;
+   -- Selects 6
+  sel <= "0110" ;
+  wait for PERIOD;
+   -- Selects 7
+  sel <= "0111" ;
+  wait for PERIOD;
+   -- Selects 8
+  sel <= "1000" ;
+  wait for PERIOD;
+   -- Selects 9
+  sel <= "1001" ;
+  wait for PERIOD;
+   -- Selects 10
+  sel <= "1010" ;
+  wait for PERIOD;
+   -- Selects 11
+  sel <= "1011" ;
+  wait for PERIOD;
+   -- Selects 12
+  sel <= "1100" ;
+  wait for PERIOD;
+   -- Selects 13
+  sel <= "1101" ;
+  wait for PERIOD;
+   -- Selects 14
+  sel <= "1110" ;
+  wait for PERIOD;
+   -- Selects 15
+  sel <= "1111" ;
+  wait for PERIOD;
+
+  -- Case 2  a = 49 = 110001 and b = 50 = 110010
+  a <= "110001";
+  b <= "110010";
+
+   -- Selects 0 
+   sel <= "0000" ;
+   wait for PERIOD;
+    -- Selects 1
+   sel <= "0001" ;
+   wait for PERIOD;
+    -- Selects 2
+   sel <= "0010" ;
+   wait for PERIOD;
+    -- Selects 3
+   sel <= "0011" ;
+   wait for PERIOD;
+    -- Selects 4
+   sel <= "0100" ;
+   wait for PERIOD;
+    -- Selects 5            
+   sel <= "0101" ;
+   wait for PERIOD;
+    -- Selects 6
+   sel <= "0110" ;
+   wait for PERIOD;
+    -- Selects 7
+   sel <= "0111" ;
+   wait for PERIOD;
+    -- Selects 8
+   sel <= "1000" ;
+   wait for PERIOD;
+    -- Selects 9
+   sel <= "1001" ;
+   wait for PERIOD;
+    -- Selects 10
+   sel <= "1010" ;
+   wait for PERIOD;
+    -- Selects 11
+   sel <= "1011" ;
+   wait for PERIOD;
+    -- Selects 12
+   sel <= "1100" ;
+   wait for PERIOD;
+    -- Selects 13
+   sel <= "1101" ;
+   wait for PERIOD;
+    -- Selects 14
+   sel <= "1110" ;
+   wait for PERIOD;
+    -- Selects 15
+   sel <= "1111" ;
+   wait for PERIOD;
+
+-- Case 3 a = 63 = 111111 and b = 63 = 111111
+  a <= "111111";
+  b <= "111111";
+
+   -- Selects 0 
+   sel <= "0000" ;
+   wait for PERIOD;
+    -- Selects 1
+   sel <= "0001" ;
+   wait for PERIOD;
+    -- Selects 2
+   sel <= "0010" ;
+   wait for PERIOD;
+    -- Selects 3
+   sel <= "0011" ;
+   wait for PERIOD;
+    -- Selects 4
+   sel <= "0100" ;
+   wait for PERIOD;
+    -- Selects 5            
+   sel <= "0101" ;
+   wait for PERIOD;
+    -- Selects 6
+   sel <= "0110" ;
+   wait for PERIOD;
+    -- Selects 7
+   sel <= "0111" ;
+   wait for PERIOD;
+    -- Selects 8
+   sel <= "1000" ;
+   wait for PERIOD;
+    -- Selects 9
+   sel <= "1001" ;
+   wait for PERIOD;
+    -- Selects 10
+   sel <= "1010" ;
+   wait for PERIOD;
+    -- Selects 11
+   sel <= "1011" ;
+   wait for PERIOD;
+    -- Selects 12
+   sel <= "1100" ;
+   wait for PERIOD;
+    -- Selects 13
+   sel <= "1101" ;
+   wait for PERIOD;
+    -- Selects 14
+   sel <= "1110" ;
+   wait for PERIOD;
+    -- Selects 15
+   sel <= "1111" ;
+   wait for PERIOD;
+
+  end process;
+end Behavioral;

@@ -1,0 +1,174 @@
+-- full adder
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+
+
+entity full_adder is
+    port(
+        a : in std_logic;
+        b : in std_logic;
+        cin : in std_logic;
+        s : out std_logic;
+        cout : out std_logic
+    );
+end full_adder;
+
+architecture Behavioral of full_adder is
+    signal w : std_logic; 
+begin
+    
+    w <= a xor b; 
+    s <= w xor cin; 
+    cout <= b when w = '0' else cin; 
+
+
+end Behavioral;
+
+--carry save mult
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+
+entity carry_save_mult is
+    generic (n : integer := 8);
+ port (
+        a : in std_logic_vector(n-1 downto 0);
+        b : in std_logic_vector(n-1 downto 0);
+        p : out std_logic_vector(2*n-1 downto 0)
+    );
+end carry_save_mult;
+
+architecture data_flow of carry_save_mult is
+
+    component full_adder is 
+        port(
+            a : in std_logic;
+            b : in std_logic;
+            cin : in std_logic;
+            s : out std_logic;
+            cout : out std_logic
+        );
+  
+    end component;
+    type arr2d is array (integer range <>) of std_logic_vector(n-1 downto 0);
+    -- And Matrix
+    signal ab : arr2d(0 to n-1);
+
+    -- Full adders
+    signal FA_a : arr2d(0 to n-2);
+    signal FA_b : arr2d(0 to n-2);
+    signal FA_cin : arr2d(0 to n-2);
+    signal FA_sum : arr2d(0 to n-2);
+    signal FA_cout : arr2d(0 to n-2);
+begin
+
+    -- And Matrix
+    gen_ab_rows : for i in 0 to n-1 generate
+        gen_ab_cols : for j in 0 to n-1 generate
+            ab(i)(j) <= a(j) and b(i);
+            end generate;
+        end generate;
+
+       
+       gen_FA_rows : for i in 0 to n-2 generate
+        gen_FA_cols: for j in 0 to n-1 generate
+       u_FA : full_adder
+       port map (
+        a => FA_a(i)(j),
+        b => FA_b(i)(j),
+        cin => FA_cin(i)(j),
+        s => FA_sum(i)(j),
+        cout => FA_cout(i)(j)
+
+       );
+        end generate;
+       end generate;
+
+            FA_a(0) <= "0" & ab(0)(n-1 downto 1);
+            FA_b(0) <= ab(1)(n-1 downto 0);
+            FA_cin(0) <= ab(2)(n-2 downto 0) & "0";
+
+        gen_FA_inter: for i in 1 to n-3 generate
+            FA_a(i) <= ab(i+1)(n-1) & FA_sum(i-1)(n-1 downto 1);
+            FA_b(i) <= FA_cout(i-1)(n-1 downto 0);
+            FA_cin(i) <= ab(i+2)(n-2 downto 0) & '0';
+            end generate;
+       
+            FA_a(n-2) <= ab(n-1)(n-1) & FA_sum(n-3)(n-1 downto 1);
+            FA_b(n-2) <= FA_cout(n-3);
+            FA_cin(n-2) <= FA_cout(n-2)(n-2 downto 0) & '0';
+      
+        p(0) <= ab(0)(0); 
+         
+        gen_prod: for i in 1 to n-2 generate
+        p(i) <= FA_sum(i-1)(0);
+    
+        end generate;
+        
+        p(n-1) <= FA_sum(n-2)(0);
+        p(n) <= FA_sum(n-2)(1);
+        p(n+1) <= FA_sum(n-2)(2);
+        p(2*n-3) <= FA_sum(n-2)(n-2);
+        p(2*n-2) <= FA_sum(n-2)(n-1);
+
+        p(2*n-2 downto n-1) <= FA_sum(n-2)(n-1 downto 0);
+        p(2*n-1) <= FA_cout(n-2)(n-1);
+     
+
+end data_flow;
+
+-- mult
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+
+
+entity mult is
+    generic (n : integer := 8);
+    port (
+           a : in std_logic_vector(n-1 downto 0);
+           b : in std_logic_vector(n-1 downto 0);
+           clk : in std_logic; 
+           p : out std_logic_vector(2*n-1 downto 0)
+       );
+end mult;
+
+ architecture Structural of mult is
+    
+
+    component carry_save_mult is
+    generic ( n : integer := 8);
+    port(
+    a : in std_logic_vector(n-1 downto 0);
+    b : in std_logic_vector(n-1 downto 0);
+    p : out std_logic_vector(2*n-1 downto 0)
+    );
+    end component;
+    
+    signal a_reg : std_logic_vector(n-1 downto 0);
+    signal b_reg : std_logic_vector(n-1 downto 0);
+    signal p_s : std_logic_vector(2*n-1 downto 0);
+    
+    begin
+    
+    u_save_mult: carry_save_mult
+    generic map(n => n)
+    port map (
+    a => a_reg ,
+    b => b_reg ,
+    p => p_s
+    );
+    
+    reg_mult : process(clk)
+    begin
+    if rising_edge(clk) then
+    a_reg <= a;
+    b_reg <= b;
+    p <= p_s;
+    end if;
+    end process;
+
+end Structural;
